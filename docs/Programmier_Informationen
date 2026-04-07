@@ -1,0 +1,73 @@
+Stoppuhr 2.0 – Programmier-Dokumentation
+1. Übersicht
+Dieses Dokument beschreibt die Hardware- und Software-Grundlagen des Projekts „Stoppuhr 2.0“. Ziel ist es, dem Programmierer eine vollständige, eindeutige Referenz für die Firmware-Entwicklung auf Basis des XIAO ESP32-S3 zu geben.
+
+Das Gerät ist ein batteriebetriebener Stopp-Taster mit Display, WLAN-Anbindung und Selbsthaltelogik. Die Firmware steuert Anzeige, Taster, Pieper, Sensorik sowie das kontrollierte Ein- und Ausschalten des Systems.
+2. Hardware-Überblick
+Zentrale MCU:
+- Seeed Studio XIAO ESP32-S3 (SMD)
+
+Hauptfunktionen:
+- ST7789 SPI Display (240x280)
+- Einzelner Haupttaster (Trigger / Eingabe)
+- Piezo-Buzzer
+- AHT20 Temperatur-/Feuchtesensor (I²C)
+- Akku-Messung über schaltbaren Spannungsteiler
+- Selbsthaltung über MOSFET (Power-Gate)
+
+3. Pinbelegung – XIAO ESP32-S3
+Signal	XIAO Pin	Beschreibung
+Taster	GPIO9	Haupttaster gegen GND
+Pieper	GPIO10	Piezo-Buzzer
+Display CS	GPIO3	SPI Chip Select
+Display DC	GPIO4	SPI Data/Command
+Display SDA/MOSI	GPIO1	SPI MOSI
+Display SCL	GPIO2	SPI Clock
+Display Reset	GPIO43	Reset Display
+AHT20 SDA	GPIO5	I²C Daten
+AHT20 SCL	GPIO6	I²C Clock
+VBAT_ADC	GPIO1 (ADC)	Akkuspannungsmessung
+MEAS_EN	GPIO2	Aktiviert Spannungsteiler
+HOLD_NODE	GPIO44	Selbsthaltung aktiv
+4. Selbsthaltelogik (Power-Gate)
+Die Versorgung des Systems erfolgt über einen High-Side-PMOS (AO3407A). Dieser wird initial über den Taster (MAG_TRIG) eingeschaltet.
+
+Nach dem Boot übernimmt die MCU die Selbsthaltung, indem GPIO44 (HOLD_NODE) aktiv auf HIGH gesetzt wird. Dadurch bleibt das System eingeschaltet, bis die Firmware den Pin wieder deaktiviert.
+
+Wichtig:
+- GPIO44 muss sehr früh im Boot-Prozess gesetzt werden
+- Vor dem Abschalten muss Display / WLAN sauber beendet werden
+
+5. Akku-Messung
+Die Akkuspannung wird über einen hochohmigen Spannungsteiler gemessen.
+
+- R10: 1 MΩ
+- R11: 330 kΩ
+- Q10 (2N7002) schaltet den Teiler
+
+Ablauf:
+1. MEAS_EN = HIGH
+2. kurze Stabilisierung (~5 ms)
+3. ADC messen
+4. MEAS_EN = LOW
+
+Dies minimiert den Ruhestromverbrauch.
+6. Programmierhinweise (Firmware)
+Empfohlene Struktur:
+- State-Machine (BOOT, IDLE, UI, RUN, SHUTDOWN)
+- Trennung von UI, Hardware und Power-Logik
+
+Wichtige Hinweise:
+- Keine Delay-Schleifen im Hauptloop
+- Display-Updates zeitgesteuert
+- Unterschiedliche Töne für interne / externe Events
+- WLAN nur aktiv, wenn benötigt
+
+Abschalten:
+- HOLD_NODE = LOW
+- danach kein weiterer Code
+7. Entwicklungs- und Debug-Hinweise
+- Serielle Ausgabe nur im Debug-Build
+- GPIO44 nicht während Flash-Vorgang aktiv halten
+- Bei Problemen: Selbsthaltung testweise deaktivieren
+
