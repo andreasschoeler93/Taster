@@ -1,4 +1,3 @@
-```markdown
 # Taster — Firmware / Display Sketch (v0.1.1)
 
 Diese Version (v0.1.1) enthält ein Display‑Sketch für ein Adafruit ST7789 Display mit angepasstem Layout:
@@ -39,5 +38,3 @@ Anpassungen
 Kontakt / Entwicklung
 - Repo: https://github.com/andreasschoeler93/Taster
 - Issues & Feature Requests bitte im Repo als Issues anlegen.
-
-```
